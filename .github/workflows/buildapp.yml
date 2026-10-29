@@ -27,7 +27,7 @@ jobs:
         name: Build SCInsta
         runs-on: macos-latest
         permissions:
-            contents: write
+            contents: read
 
         steps:
             - name: Checkout Main
@@ -92,6 +92,8 @@ jobs:
                 mkdir -p packages
                 wget "$Instagram_URL" --no-verbose -O packages/com.burbn.instagram.ipa
 
+                echo '40b8910c7a25dadcd060bbadabc60d44f22cc4b25e86320f99eca0125bc1a02c  packages/com.burbn.instagram.ipa' | shasum -a 256 -c -
+
                 ls -la packages
                 
               env:
@@ -125,28 +127,18 @@ jobs:
             - name: Rename IPA to include version info
               run: |
                 cd main/packages
-                mv "$(ls -t | head -n1)" "SCInsta_sideloaded_v${SCINSTA_VERSION}.ipa"
+                mv SCInsta-sideloaded.ipa SCInsta_Instagram_435.0.0_PR282.ipa
 
             - name: Pass package name to upload action
               id: package_name
               run: |
-                echo "package=$(ls -t main/packages |  head -n1)" >> "$GITHUB_OUTPUT"
+                echo "package=SCInsta_Instagram_435.0.0_PR282.ipa" >> "$GITHUB_OUTPUT"
 
             - name: Upload Artifact
               if: ${{ inputs.upload_artifact }}
               uses: actions/upload-artifact@v4
               with:
-                name: SCInsta_sideloaded_v${{ steps.scinsta_version.outputs.version }}
+                name: SCInsta_Instagram_435.0.0_PR282
                 path: ${{ github.workspace }}/main/packages/${{ steps.package_name.outputs.package }}
                 if-no-files-found: error
 
-            - name: Create Release
-              uses: softprops/action-gh-release@v2.0.6
-              with:
-                name: SCInsta_sideloaded_v${{ steps.scinsta_version.outputs.version }}
-                files: ${{ github.workspace }}/main/packages/SCInsta_sideloaded_v*.ipa
-                draft: true
-
-            - name: Output Release URL
-              run: |
-                echo "::notice::Release available at: https://github.com/${{ github.repository }}/releases"
